@@ -53,7 +53,7 @@
     "prepare": "simple-git-hooks"
   },
   "stackblitz": {
-    "startCommand": "pnpm build && pnpm --filter=umbraco-rich-text-example dev"
+    "startCommand": "pnpm build && pnpm --filter=@charlietango/umbraco-rich-text--example dev"
   },
   "dependencies": {
     "html-entities": "^2.6.0"
