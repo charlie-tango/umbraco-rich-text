@@ -17,7 +17,7 @@ npm install @charlietango/umbraco-rich-text
 
 ## `<UmbracoRichText>`
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/charlie-tango/react-umbraco/tree/main?file=examples/UmbracoRichText/src/RichText.tsx)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/charlie-tango/umbraco-rich-text/tree/main?file=examples/UmbracoRichText/src/RichText.tsx)
 
 Takes the rich text property from the Umbraco Content Delivery API and renders
 it with React.
@@ -101,7 +101,7 @@ function RichText({ data }) {
 You can augment the `renderBlock` method with the generated OpenAPI types from
 Umbraco Content Delivery API. That way you can correctly filter the blocks you
 are rendering, based on the `contentType`, and get the associated `properties`.
-Create `types/react-umbraco.d.ts`, and augment the `UmbracoBlockItemModel`
+Create `types/umbraco-rich-text.d.ts`, and augment the `UmbracoBlockItemModel`
 interface with your applications definition for `ApiBlockItemModel`.
 
 To generate the types, you'll want to use the
@@ -109,7 +109,7 @@ To generate the types, you'll want to use the
 package, alongside a tool to generate the types from the OpenAPI schema, like
 [openapi-typescript](https://openapi-ts.pages.dev/).
 
-**types/react-umbraco.d.ts**
+**types/umbraco-rich-text.d.ts**
 
 ```ts
 import { components } from "@/openapi/umbraco";
@@ -172,5 +172,6 @@ const ignoreTags = richTextToPlainText(richTextData, {
   https://img.shields.io/npm/v/@charlietango/umbraco-rich-text?style=flat&colorA=080f12&colorB=1fa669
 [npm-version-href]: https://npmjs.com/package/@charlietango/umbraco-rich-text
 [license-src]:
-  https://img.shields.io/github/license/charlie-tango/react-umbraco.svg?style=flat&colorA=080f12&colorB=1fa669
-[license-href]: https://github.com/charlie-tango/react-umbraco/blob/main/LICENSE
+  https://img.shields.io/github/license/charlie-tango/umbraco-rich-text.svg?style=flat&colorA=080f12&colorB=1fa669
+[license-href]:
+  https://github.com/charlie-tango/umbraco-rich-text/blob/main/LICENSE
