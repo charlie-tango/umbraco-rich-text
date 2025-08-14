@@ -700,3 +700,146 @@ it("should convert colspan and rowspan to colSpan and rowSpan in table rendering
   expect(screen.getByTestId("cell1").element()).toHaveAttribute("colSpan", "2");
   expect(screen.getByTestId("cell2").element()).toHaveAttribute("rowSpan", "2");
 });
+
+it("should strip all inline styles when stripStyles is true", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { style: "color: red; font-size: 16px;" },
+            elements: [
+              {
+                tag: "p",
+                attributes: { style: "margin: 10px; padding: 5px;" },
+                elements: [{ tag: "#text", text: "Text with stripped styles" }],
+              },
+            ],
+          },
+        ],
+      }}
+      stripStyles={true}
+    />,
+  );
+
+  const div = screen.container.querySelector("div");
+  const p = screen.container.querySelector("p");
+
+  expect(div).not.toHaveAttribute("style");
+  expect(p).not.toHaveAttribute("style");
+});
+
+it("should strip styles only from specified tags", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { style: "color: red; font-size: 16px;" },
+            elements: [
+              {
+                tag: "p",
+                attributes: { style: "margin: 10px; padding: 5px;" },
+                elements: [
+                  { tag: "#text", text: "Text with partially stripped styles" },
+                ],
+              },
+            ],
+          },
+        ],
+      }}
+      stripStyles={{ tags: ["p"] }}
+    />,
+  );
+
+  const div = screen.container.querySelector("div");
+  const p = screen.container.querySelector("p");
+
+  expect(div).toHaveAttribute("style", "color: red; font-size: 16px;");
+  expect(p).not.toHaveAttribute("style");
+});
+
+it("should preserve styles for excepted tags", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { style: "color: red; font-size: 16px;" },
+            elements: [
+              {
+                tag: "p",
+                attributes: { style: "margin: 10px; padding: 5px;" },
+                elements: [{ tag: "#text", text: "Text with excepted styles" }],
+              },
+              {
+                tag: "span",
+                attributes: { style: "font-weight: bold;" },
+                elements: [{ tag: "#text", text: "Bold text" }],
+              },
+            ],
+          },
+        ],
+      }}
+      stripStyles={{ except: ["p"] }}
+    />,
+  );
+
+  const div = screen.container.querySelector("div");
+  const p = screen.container.querySelector("p");
+  const span = screen.container.querySelector("span");
+
+  expect(div).not.toHaveAttribute("style");
+  expect(p).toHaveAttribute("style", "margin: 10px; padding: 5px;");
+  expect(span).not.toHaveAttribute("style");
+});
+
+it("should combine tags and except properties correctly", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { style: "color: red;" },
+            elements: [
+              {
+                tag: "p",
+                attributes: { style: "margin: 10px;" },
+                elements: [{ tag: "#text", text: "Paragraph" }],
+              },
+              {
+                tag: "span",
+                attributes: { style: "font-weight: bold;" },
+                elements: [{ tag: "#text", text: "Span" }],
+              },
+              {
+                tag: "h1",
+                attributes: { style: "font-size: 24px;" },
+                elements: [{ tag: "#text", text: "Heading" }],
+              },
+            ],
+          },
+        ],
+      }}
+      stripStyles={{ tags: ["div", "p", "span"], except: ["span"] }}
+    />,
+  );
+
+  const div = screen.container.querySelector("div");
+  const p = screen.container.querySelector("p");
+  const span = screen.container.querySelector("span");
+  const h1 = screen.container.querySelector("h1");
+
+  expect(div).not.toHaveAttribute("style");
+  expect(p).not.toHaveAttribute("style");
+  expect(span).toHaveAttribute("style", "font-weight: bold;");
+  expect(h1).toHaveAttribute("style", "font-size: 24px;");
+});

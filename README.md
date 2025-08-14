@@ -32,6 +32,14 @@ it with React.
   These will be used, unless the element already has the attribute set. The only
   exception is the `className` attribute, which will be merged with the default
   value.
+- `stripStyles`: Remove inline style attributes from HTML elements. Accepts:
+  - `true`: Removes all inline styles from all HTML elements
+  - An object with configuration options:
+    - `tags`: Array of HTML tags from which to strip styles. If not provided,
+      styles are stripped from all tags.
+    - `except`: Array of HTML tags that should keep their styles, even if they
+      are in the `tags` array.
+  - Default is `false` (all inline styles are preserved).
 
 When passing the `renderBlock` and `renderNode` props, consider making them
 static functions (move them outside the consuming component) to avoid
@@ -78,7 +86,11 @@ function RichText({ data }) {
       data={data.richText}
       renderNode={renderNode}
       renderBlock={renderBlock}
-      htmlAttributes={{ p: { className: "mb-4" }}
+      htmlAttributes={{ p: { className: "mb-4" } }}
+      stripStyles={{
+        // Strip styles from all tags except the following:
+        except: ["img"], // Keep styles on `img` tags
+      }}
     />
   );
 }
