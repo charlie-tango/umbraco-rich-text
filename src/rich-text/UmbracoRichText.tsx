@@ -69,6 +69,20 @@ interface RichTextProps {
   htmlAttributes?: Partial<{
     [Tag in keyof React.JSX.IntrinsicElements]: React.JSX.IntrinsicElements[Tag];
   }>;
+  /**
+   * Strip the inline style attributes from the HTML elements
+   * This can be a boolean to strip all styles, or an object to specify which tags to strip styles from.
+   * If an object is provided, the `tags` property lists tags to strip styles from. If not set, all tags will have their styles stripped.
+   * The `except` property can be used to specify tags that should not have their styles stripped, even if they are in the `tags` array.
+   *
+   * @default false
+   */
+  stripStyles?:
+    | boolean
+    | {
+        tags?: Array<keyof React.JSX.IntrinsicElements>;
+        except?: Array<keyof React.JSX.IntrinsicElements>;
+      };
 }
 
 function parseUrl(href: string) {
@@ -94,12 +108,16 @@ function RichTextElement({
   renderBlock,
   renderNode,
   htmlAttributes = {},
+  stripStyles = false,
   meta,
 }: {
   element: RichTextElementModel;
   blocks: Array<RenderBlockContext> | undefined;
   meta: NodeMeta | undefined;
-} & Pick<RichTextProps, "renderBlock" | "renderNode" | "htmlAttributes">) {
+} & Pick<
+  RichTextProps,
+  "renderBlock" | "renderNode" | "htmlAttributes" | "stripStyles"
+>) {
   if (!element || element.tag === "#comment" || element.tag === "#root")
     return null;
 
@@ -136,6 +154,7 @@ function RichTextElement({
         blocks={blocks}
         renderBlock={renderBlock}
         renderNode={renderNode}
+        stripStyles={stripStyles}
         meta={{
           ancestor: element,
           children: hasElements(node) ? node.elements : undefined,
@@ -189,8 +208,32 @@ function RichTextElement({
       }
     }
 
+    // Handle style attributes
     if (typeof style === "string") {
-      attributes.style = parseStyle(style);
+      // Determine if we should strip styles for this element
+      let shouldStripStyles = stripStyles === true;
+
+      if (typeof stripStyles === "object") {
+        // If tags array is provided, only strip styles from those tags
+        // If tags is not provided, strip from all tags
+        const shouldStrip =
+          stripStyles.tags?.includes(
+            element.tag as keyof React.JSX.IntrinsicElements,
+          ) ?? true;
+
+        // Check if this tag is in the except list
+        const isExcepted =
+          stripStyles.except?.includes(
+            element.tag as keyof React.JSX.IntrinsicElements,
+          ) || false;
+
+        shouldStripStyles = shouldStrip && !isExcepted;
+      }
+
+      // Only parse and add style if we're not stripping it
+      if (!shouldStripStyles) {
+        attributes.style = parseStyle(style);
+      }
     }
 
     if (renderNode) {
@@ -250,6 +293,7 @@ export function UmbracoRichText(props: RichTextProps) {
             renderBlock={props.renderBlock}
             renderNode={props.renderNode}
             htmlAttributes={props.htmlAttributes}
+            stripStyles={props.stripStyles}
             meta={{
               ancestor: rootElement,
               children: hasElements(element) ? element.elements : undefined,
