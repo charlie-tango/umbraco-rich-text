@@ -211,7 +211,7 @@ function RichTextElement({
     // Handle style attributes
     if (typeof style === "string") {
       // Determine if we should strip styles for this element
-      let shouldStripStyle = stripStyles === true;
+      let shouldStripStyles = stripStyles === true;
 
       if (typeof stripStyles === "object") {
         // If tags array is provided, only strip styles from those tags
@@ -227,11 +227,11 @@ function RichTextElement({
             element.tag as keyof React.JSX.IntrinsicElements,
           ) || false;
 
-        shouldStripStyle = shouldStrip && !isExcepted;
+        shouldStripStyles = shouldStrip && !isExcepted;
       }
 
       // Only parse and add style if we're not stripping it
-      if (!shouldStripStyle) {
+      if (!shouldStripStyles) {
         attributes.style = parseStyle(style);
       }
     }
