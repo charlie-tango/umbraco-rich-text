@@ -1,21 +1,22 @@
 {
-  "name": "@charlietango/react-umbraco",
+  "name": "@charlietango/umbraco-rich-text",
   "private": false,
   "type": "module",
   "version": "0.6.0",
-  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39",
-  "description": "React components for working with Umbraco Headless",
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
+  "description": "React component for working with rich text from the Umbraco Content Delivery API.",
   "author": "Charlie Tango",
   "license": "MIT",
-  "homepage": "https://github.com/charlie-tango/react-umbraco#readme",
+  "homepage": "https://github.com/charlie-tango/umbraco-rich-text#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/charlie-tango/react-umbraco.git"
+    "url": "git+https://github.com/charlie-tango/umbraco-rich-text.git"
   },
-  "bugs": "https://github.com/charlie-tango/react-umbraco/issues",
+  "bugs": "https://github.com/charlie-tango/umbraco-rich-text/issues",
   "keywords": [
     "umbraco",
     "react",
+    "rich text",
     "content delivery api",
     "headless cms"
   ],
@@ -52,7 +53,7 @@
     "prepare": "simple-git-hooks"
   },
   "stackblitz": {
-    "startCommand": "pnpm build && pnpm --filter=react-umbraco-example dev"
+    "startCommand": "pnpm build && pnpm --filter=umbraco-rich-text-example dev"
   },
   "dependencies": {
     "html-entities": "^2.6.0"
@@ -61,25 +62,25 @@
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.1",
-    "@types/node": "^24.0.14",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@biomejs/biome": "^2.1.4",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
     "@vitest/browser": "^3.2.4",
-    "bumpp": "^10.2.0",
-    "lint-staged": "^16.1.2",
-    "playwright": "^1.54.1",
+    "bumpp": "^10.2.3",
+    "lint-staged": "^16.1.5",
+    "playwright": "^1.54.2",
     "prettier": "^3.6.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "rimraf": "^6.0.1",
-    "simple-git-hooks": "^2.13.0",
-    "typescript": "^5.8.3",
-    "unbuild": "^3.5.0",
-    "vite": "^7.0.5",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.9.2",
+    "unbuild": "^3.6.0",
+    "vite": "^7.1.2",
     "vitest": "^3.2.4",
-    "vitest-browser-react": "^1.0.0"
+    "vitest-browser-react": "^1.0.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"

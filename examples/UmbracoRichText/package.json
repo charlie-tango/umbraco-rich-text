@@ -1,26 +1,27 @@
 {
-  "name": "react-umbraco-example",
+  "name": "@charlietango/umbraco-rich-text--example",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@charlietango/react-umbraco": "workspace:*",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "@charlietango/umbraco-rich-text": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-lazy-load-image-component": "^1.6.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.11",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
     "tailwindcss": "^4.1.11",
-    "typescript": "^5.8.3",
-    "vite": "^7.0.5"
+    "typescript": "^5.9.2",
+    "vite": "^7.1.2"
   }
 }
