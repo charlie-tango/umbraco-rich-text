@@ -1,2 +1,4 @@
+# We use Biome to format our code, so we ignore all files for Prettier
 **/*.*
+# Biome doesn't format these files, so include them in Prettier
 !**/*.md

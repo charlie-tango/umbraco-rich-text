@@ -89,14 +89,14 @@ interface BaseBlockItemModel {
  * Override the block item model with Umbraco specific properties.
  * This way you can get the full type safety of the Umbraco API you are using.
  *
- * **react-umbraco.d.ts**
+ * **umbraco-rich-text.d.ts**
  * ```ts
  * import { components } from '@/openapi/umbraco';
  *
  * // Define the intermediate interface
  * type ApiBlockItemModel = components['schemas']['ApiBlockItemModel'];
  *
- * declare module '@charlietango/react-umbraco' {
+ * declare module '@charlietango/umbraco-rich-text' {
  *   interface UmbracoBlockItemModel extends ApiBlockItemModel {}
  * }
  * ```

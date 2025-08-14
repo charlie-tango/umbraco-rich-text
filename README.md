@@ -1,4 +1,4 @@
-# react-umbraco
+# Umbraco Rich Text
 
 [![npm version][npm-version-src]][npm-version-href]
 [![License][license-src]][license-href]
@@ -8,16 +8,16 @@ A collection of React components for working with the Umbraco
 
 ## Install
 
-Install the `@charlietango/react-umbraco` package with your package manager of
-choice.
+Install the `@charlietango/umbraco-rich-text` package with your package manager
+of choice.
 
 ```sh
-npm install @charlietango/react-umbraco
+npm install @charlietango/umbraco-rich-text
 ```
 
 ## `<UmbracoRichText>`
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/charlie-tango/react-umbraco/tree/main?file=examples/UmbracoRichText/src/RichText.tsx)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/charlie-tango/umbraco-rich-text/tree/main?file=examples/UmbracoRichText/src/RichText.tsx)
 
 Takes the rich text property from the Umbraco Content Delivery API and renders
 it with React.
@@ -50,7 +50,7 @@ import {
   UmbracoRichText,
   RenderBlockContext,
   RenderNodeContext,
-} from "@charlietango/react-umbraco";
+} from "@charlietango/umbraco-rich-text";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -101,7 +101,7 @@ function RichText({ data }) {
 You can augment the `renderBlock` method with the generated OpenAPI types from
 Umbraco Content Delivery API. That way you can correctly filter the blocks you
 are rendering, based on the `contentType`, and get the associated `properties`.
-Create `types/react-umbraco.d.ts`, and augment the `UmbracoBlockItemModel`
+Create `types/umbraco-rich-text.d.ts`, and augment the `UmbracoBlockItemModel`
 interface with your applications definition for `ApiBlockItemModel`.
 
 To generate the types, you'll want to use the
@@ -109,7 +109,7 @@ To generate the types, you'll want to use the
 package, alongside a tool to generate the types from the OpenAPI schema, like
 [openapi-typescript](https://openapi-ts.pages.dev/).
 
-**types/react-umbraco.d.ts**
+**types/umbraco-rich-text.d.ts**
 
 ```ts
 import { components } from "@/openapi/umbraco";
@@ -117,7 +117,7 @@ import { components } from "@/openapi/umbraco";
 // Define the intermediate interface
 type ApiBlockItemModel = components["schemas"]["ApiBlockItemModel"];
 
-declare module "@charlietango/react-umbraco" {
+declare module "@charlietango/umbraco-rich-text" {
   interface UmbracoBlockItemModel extends ApiBlockItemModel {}
 }
 ```
@@ -146,7 +146,7 @@ can be useful for generating meta descriptions or other text-based properties.
 ### Example
 
 ```ts
-import { richTextToPlainText } from "@charlietango/react-umbraco";
+import { richTextToPlainText } from "@charlietango/umbraco-rich-text";
 
 const plainText = richTextToPlainText(richTextData);
 
@@ -169,8 +169,9 @@ const ignoreTags = richTextToPlainText(richTextData, {
 <!-- Badges -->
 
 [npm-version-src]:
-  https://img.shields.io/npm/v/@charlietango/react-umbraco?style=flat&colorA=080f12&colorB=1fa669
-[npm-version-href]: https://npmjs.com/package/@charlietango/react-umbraco
+  https://img.shields.io/npm/v/@charlietango/umbraco-rich-text?style=flat&colorA=080f12&colorB=1fa669
+[npm-version-href]: https://npmjs.com/package/@charlietango/umbraco-rich-text
 [license-src]:
-  https://img.shields.io/github/license/charlie-tango/react-umbraco.svg?style=flat&colorA=080f12&colorB=1fa669
-[license-href]: https://github.com/charlie-tango/react-umbraco/blob/main/LICENSE
+  https://img.shields.io/github/license/charlie-tango/umbraco-rich-text.svg?style=flat&colorA=080f12&colorB=1fa669
+[license-href]:
+  https://github.com/charlie-tango/umbraco-rich-text/blob/main/LICENSE
