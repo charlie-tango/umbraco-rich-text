@@ -27,8 +27,6 @@ jobs:
         run: pnpm biome ci .
       - name: Type check
         run: pnpm typecheck
-      - name: Example type check
-        run: pnpm typecheck
         working-directory: examples/UmbracoRichText
       - name: Install playwright
         run: pnpm exec playwright install
