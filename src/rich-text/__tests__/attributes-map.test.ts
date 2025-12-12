@@ -66,8 +66,10 @@ it("should keep unmapped attributes unchanged", () => {
 
 it("should handle empty or null attributes", () => {
   expect(mapHtmlAttributesToReact({})).toEqual({});
-  expect(mapHtmlAttributesToReact(null as any)).toEqual({});
-  expect(mapHtmlAttributesToReact(undefined as any)).toEqual({});
+  // @ts-expect-error Testing null/undefined handling
+  expect(mapHtmlAttributesToReact(null)).toEqual({});
+  // @ts-expect-error Testing null/undefined handling
+  expect(mapHtmlAttributesToReact(undefined)).toEqual({});
 });
 
 it("should convert SVG attributes", () => {
