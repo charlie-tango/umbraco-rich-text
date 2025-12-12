@@ -3,13 +3,13 @@
   "files": {
     "includes": [
       "**",
-      "!**/.idea/**",
-      "!**/node_modules/**",
-      "!**/dist/**",
-      "!**/coverage/**",
-      "!**/storybook-static/**",
+      "!**/.idea",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/coverage",
+      "!**/storybook-static",
       "!**/pnpm-lock.yaml",
-      "!**/examples/**",
+      "!**/examples",
       "!**/package.json"
     ]
   },

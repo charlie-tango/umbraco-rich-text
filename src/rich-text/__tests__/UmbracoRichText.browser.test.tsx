@@ -593,6 +593,41 @@ it("don't remove localhost, from an URL that for some weird reason also contains
   );
 });
 
+it("should not mutate attributes across renders of the same data", () => {
+  const data = {
+    tag: "#root",
+    elements: [
+      {
+        tag: "a",
+        attributes: {
+          href: "/about",
+          anchor: "#main",
+          class: "link",
+        },
+        elements: [{ tag: "#text", text: "Link" }],
+      },
+    ],
+  } satisfies RichTextElementModel;
+
+  const htmlAttributes = { a: { className: "default" } };
+
+  const first = render(
+    <UmbracoRichText data={data} htmlAttributes={htmlAttributes} />,
+  );
+  const firstLink = first.getByRole("link").element();
+  expect(firstLink).toHaveAttribute("href", "/about#main");
+  expect(firstLink).toHaveClass("default", "link");
+
+  first.unmount?.();
+
+  const second = render(
+    <UmbracoRichText data={data} htmlAttributes={htmlAttributes} />,
+  );
+  const secondLink = second.getByRole("link").element();
+  expect(secondLink).toHaveAttribute("href", "/about#main");
+  expect(secondLink).toHaveClass("default", "link");
+});
+
 it("should forward the expected meta data nodes to renderNode", () => {
   // Create a mock function to capture renderNode calls
   const renderNodeMock = vi.fn((_node) => {
@@ -639,26 +674,27 @@ it("should forward the expected meta data nodes to renderNode", () => {
 
   expect(middleChildCall).toBeDefined();
 
-  // Check that the meta property contains the expected values
-  expect(middleChildCall.meta).toBeDefined();
+  // Check that the meta getter returns the expected values
+  const meta = middleChildCall.meta();
+  expect(meta).toBeDefined();
 
   // Check parent (ancestor)
-  expect(middleChildCall.meta.ancestor).toBeDefined();
-  expect(middleChildCall.meta.ancestor?.tag).toBe("div");
-  expect(middleChildCall.meta.ancestor?.attributes.id).toBe("parent");
+  expect(meta.ancestor).toBeDefined();
+  expect(meta.ancestor?.tag).toBe("div");
+  expect(meta.ancestor?.attributes.id).toBe("parent");
 
   // Check previous sibling
-  expect(middleChildCall.meta.previous).toBeDefined();
-  expect(middleChildCall.meta.previous?.tag).toBe("p");
-  expect(middleChildCall.meta.previous?.attributes.id).toBe("first-child");
+  expect(meta.previous).toBeDefined();
+  expect(meta.previous?.tag).toBe("p");
+  expect(meta.previous?.attributes.id).toBe("first-child");
 
   // Check next sibling
-  expect(middleChildCall.meta.next).toBeDefined();
-  expect(middleChildCall.meta.next?.tag).toBe("p");
-  expect(middleChildCall.meta.next?.attributes.id).toBe("last-child");
+  expect(meta.next).toBeDefined();
+  expect(meta.next?.tag).toBe("p");
+  expect(meta.next?.attributes.id).toBe("last-child");
 
   // Check that children is the text node
-  expect(middleChildCall.meta.children).toMatchObject([
+  expect(meta.children).toMatchObject([
     {
       tag: "#text",
       text: "Middle child",

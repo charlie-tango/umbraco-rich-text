@@ -13,6 +13,21 @@ import {
   type RouteAttributes,
 } from "./RichTextTypes";
 
+const htmlEntityRegex = /&(?:[a-zA-Z]|#)/;
+const emptyMeta: NodeMeta = {};
+
+const decodeIfEntities = (value: string) =>
+  htmlEntityRegex.test(value) ? decode(value) : value;
+
+const createMetaGetter = (getMetaData?: () => NodeMeta) => {
+  if (!getMetaData) return undefined;
+  let cachedMeta: NodeMeta | undefined;
+  return () => {
+    cachedMeta ||= getMetaData();
+    return cachedMeta;
+  };
+};
+
 interface NodeMeta {
   /** The node of the parent element */
   ancestor?: RichTextElementModel;
@@ -30,7 +45,11 @@ interface NodeMeta {
  */
 export type RenderNodeContext = {
   children?: React.ReactNode;
-  meta: NodeMeta;
+  /**
+   * Lazily evaluated metadata for the current node.
+   * Invoke to retrieve ancestor/children/previous/next when needed.
+   */
+  meta: () => NodeMeta;
 } & (
   | {
       [Tag in keyof React.JSX.IntrinsicElements]: {
@@ -105,15 +124,19 @@ function parseUrl(href: string) {
 function RichTextElement({
   element,
   blocks,
+  blocksLookup,
   renderBlock,
   renderNode,
   htmlAttributes = {},
   stripStyles = false,
-  meta,
+  metaGetter,
+  provideMeta,
 }: {
   element: RichTextElementModel;
   blocks: Array<RenderBlockContext> | undefined;
-  meta: NodeMeta | undefined;
+  metaGetter: (() => NodeMeta) | undefined;
+  blocksLookup: Map<string, RenderBlockContext> | undefined;
+  provideMeta: boolean;
 } & Pick<
   RichTextProps,
   "renderBlock" | "renderNode" | "htmlAttributes" | "stripStyles"
@@ -121,19 +144,24 @@ function RichTextElement({
   if (!element || element.tag === "#comment" || element.tag === "#root")
     return null;
 
+  const getMeta =
+    provideMeta && metaGetter ? createMetaGetter(metaGetter) : undefined;
+
   if (isTextElement(element)) {
     // Umbraco adds a new line character to the text element between HTML tags. Remove this, so we keep the HTML valid.
     // This is only for cases where the only thing in the text element is a new line - This would just be added to keep the HTML pretty.
     if (element.text === "\n") return null;
     // Decode HTML entities in text nodes
-    return decode(element.text);
+    return decodeIfEntities(element.text);
   }
 
   // If the tag is a block, skip the normal rendering and render the block
   if (isUmbracoBlock(element)) {
-    const block = blocks?.find(
-      (block) => block.content?.id === element.attributes?.["content-id"],
-    );
+    const contentId = element.attributes?.["content-id"];
+    const block =
+      contentId &&
+      (blocksLookup?.get(contentId) ??
+        blocks?.find((item) => item.content?.id === contentId));
     if (renderBlock && block) {
       return renderBlock(block);
     }
@@ -152,15 +180,21 @@ function RichTextElement({
         key={index}
         element={node}
         blocks={blocks}
+        blocksLookup={blocksLookup}
         renderBlock={renderBlock}
         renderNode={renderNode}
         stripStyles={stripStyles}
-        meta={{
-          ancestor: element,
-          children: hasElements(node) ? node.elements : undefined,
-          previous: element.elements?.[index - 1],
-          next: element.elements?.[index + 1],
-        }}
+        metaGetter={
+          provideMeta
+            ? createMetaGetter(() => ({
+                ancestor: element,
+                children: hasElements(node) ? node.elements : undefined,
+                previous: element.elements?.[index - 1],
+                next: element.elements?.[index + 1],
+              }))
+            : undefined
+        }
+        provideMeta={provideMeta}
       />
     ));
     if (children?.length === 0) {
@@ -173,10 +207,12 @@ function RichTextElement({
     const defaultAttributes = htmlAttributes[element.tag];
 
     if (element.tag === "a") {
-      const href = route?.path ?? decode((attributes?.href as string) ?? "");
-      const anchorOrQuery = attributes.anchor
-        ? decode(attributes.anchor as string)
-        : undefined;
+      const hrefFromAttributes = attributes?.href as string | undefined;
+      const href = route?.path ?? decodeIfEntities(hrefFromAttributes ?? "");
+      const anchorOrQuery =
+        attributes.anchor && typeof attributes.anchor === "string"
+          ? decodeIfEntities(attributes.anchor)
+          : undefined;
       attributes.anchor = undefined;
 
       const url = parseUrl(href);
@@ -246,7 +282,7 @@ function RichTextElement({
         } as Record<string, unknown>,
         children,
         route,
-        meta: meta || {},
+        meta: getMeta ?? (() => emptyMeta),
       });
 
       if (output !== undefined) {
@@ -282,6 +318,11 @@ function RichTextElement({
  */
 export function UmbracoRichText(props: RichTextProps) {
   const rootElement = props.data;
+  const blocksLookup = buildBlockLookup(
+    isRootElement(rootElement) ? rootElement.blocks : undefined,
+  );
+  const provideMeta = Boolean(props.renderNode);
+
   if (isRootElement(rootElement)) {
     return (
       <>
@@ -290,16 +331,24 @@ export function UmbracoRichText(props: RichTextProps) {
             key={index}
             element={element}
             blocks={rootElement.blocks}
+            blocksLookup={blocksLookup}
             renderBlock={props.renderBlock}
             renderNode={props.renderNode}
             htmlAttributes={props.htmlAttributes}
             stripStyles={props.stripStyles}
-            meta={{
-              ancestor: rootElement,
-              children: hasElements(element) ? element.elements : undefined,
-              previous: rootElement.elements?.[index - 1],
-              next: rootElement.elements?.[index + 1],
-            }}
+            metaGetter={
+              provideMeta
+                ? createMetaGetter(() => ({
+                    ancestor: rootElement,
+                    children: hasElements(element)
+                      ? element.elements
+                      : undefined,
+                    previous: rootElement.elements?.[index - 1],
+                    next: rootElement.elements?.[index + 1],
+                  }))
+                : undefined
+            }
+            provideMeta={provideMeta}
           />
         ))}
       </>
@@ -308,4 +357,20 @@ export function UmbracoRichText(props: RichTextProps) {
 
   // If the element is not a root element, we return null
   return null;
+}
+
+function buildBlockLookup(
+  blocks: Array<RenderBlockContext> | undefined,
+): Map<string, RenderBlockContext> | undefined {
+  if (!blocks || blocks.length === 0) return undefined;
+
+  const lookup = new Map<string, RenderBlockContext>();
+  for (const block of blocks) {
+    const id = block.content?.id;
+    if (id) {
+      lookup.set(id, block);
+    }
+  }
+
+  return lookup;
 }

@@ -15,14 +15,22 @@ const toCamelCase = (value: string) => {
  * This is a basic conversion, that does not do any validation of the style properties.
  * @param style
  */
+const MAX_STYLE_CACHE_ENTRIES = 200;
+const styleCache = new Map<string, CSSProperties>();
+
 export const parseStyle = (style: string) => {
-  const styleProps: Record<string, string> = {};
-  if (!style) {
+  const normalizedStyle = style.trim();
+  if (!normalizedStyle) {
     // Return an empty object if no style string is provided
-    return styleProps as CSSProperties;
+    return {} as CSSProperties;
   }
 
-  const styleElements = style.trim().split(";");
+  const cached = styleCache.get(normalizedStyle);
+  if (cached) return cached;
+
+  const styleProps: Record<string, string> = {};
+
+  const styleElements = normalizedStyle.split(";");
   for (const el of styleElements) {
     let [property, value] = el.split(":");
     if (!property || value === undefined) continue;
@@ -34,5 +42,16 @@ export const parseStyle = (style: string) => {
     styleProps[property] = value.trim();
   }
 
-  return styleProps as CSSProperties;
+  const parsed = styleProps as CSSProperties;
+
+  // Maintain a bounded cache to avoid unbounded memory growth
+  if (styleCache.size >= MAX_STYLE_CACHE_ENTRIES) {
+    const firstKey = styleCache.keys().next().value;
+    if (firstKey !== undefined) {
+      styleCache.delete(firstKey);
+    }
+  }
+  styleCache.set(normalizedStyle, parsed);
+
+  return parsed;
 };
