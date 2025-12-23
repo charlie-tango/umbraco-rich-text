@@ -291,7 +291,7 @@ function RichText({ data }) {
       if (tag === "strong") return <strong {...attributes}>{children}</strong>;
       return undefined;
     },
-    [],
+    [], // no external deps; relies only on provided RenderNodeContext
   );
 
   const htmlAttributes = useMemo(
@@ -329,22 +329,20 @@ rendering:
 `renderNode` to filter the `style` attribute:
 
 ```tsx
+import { createElement } from "react";
+
 const ALLOWED_STYLES = ["font-weight", "font-style"];
 
 function filterAllowedStyles(style: string) {
-  const allowedRules = style
-    .split(";")
-    .map((rule) => rule.trim())
-    .filter(Boolean)
-    .map((rule) => {
-      const [property, ...rest] = rule.split(":");
-      const propName = property?.trim();
-      const value = rest.join(":").trim();
-      if (!propName || !value) return null;
-      if (!ALLOWED_STYLES.includes(propName)) return null;
-      return `${propName}: ${value}`;
-    })
-    .filter(Boolean) as string[];
+  const allowedRules: string[] = [];
+  for (const rule of style.split(";")) {
+    const [property, ...rest] = rule.split(":");
+    const propName = property?.trim();
+    const value = rest.join(":").trim();
+    if (!propName || !value) continue;
+    if (!ALLOWED_STYLES.includes(propName)) continue;
+    allowedRules.push(`${propName}: ${value}`);
+  }
 
   return allowedRules.length > 0 ? allowedRules.join("; ") : undefined;
 }
@@ -352,8 +350,11 @@ function filterAllowedStyles(style: string) {
 function renderNode({ tag, attributes, children }: RenderNodeContext) {
   if (typeof attributes.style === "string") {
     const filtered = filterAllowedStyles(attributes.style);
-    if (filtered) attributes.style = filtered;
-    else delete attributes.style;
+    const nextAttributes = { ...attributes };
+    if (filtered) nextAttributes.style = filtered;
+    else delete nextAttributes.style;
+
+    return createElement(tag, nextAttributes, children);
   }
 
   return undefined; // fall back to default rendering
