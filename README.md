@@ -105,6 +105,42 @@ function RichText({ data }) {
 }
 ```
 
+### `renderNode` metadata
+
+Use the `meta` argument in `renderNode` to inspect the current node’s context,
+like its children, siblings, or ancestors. Call `meta()` to build the metadata
+for the current node only when you need it. This can be helpful for removing
+wrappers you don’t need when rendering. For example, you can drop the paragraph
+tag around blocks so they render directly:
+
+```tsx
+function renderNode({ tag, children, attributes, meta }: RenderNodeContext) {
+  switch (tag) {
+    case "p": {
+      if (!children) return null;
+      const blockTags = ["umb-rte-block-inline", "umb-rte-block"];
+      const pChildren = meta().children ?? [];
+      if (
+        pChildren.length === 1 &&
+        blockTags.includes(pChildren[0]?.tag ?? "")
+      ) {
+        // If the paragraph only contains a block or inline block,
+        // do not include it in a paragraph tag.
+        return children;
+      }
+
+      return (
+        <p {...attributes} className="body-md">
+          {children}
+        </p>
+      );
+    }
+    default:
+      return undefined;
+  }
+}
+```
+
 ### Blocks
 
 You can augment the `renderBlock` method with the generated OpenAPI types from
