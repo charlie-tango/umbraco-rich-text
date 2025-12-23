@@ -336,6 +336,7 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
     const allowed = attributes.style
       .split(";")
       .map((rule) => rule.trim())
+      .filter((rule) => rule.length > 0)
       .filter((rule) => {
         if (!rule.includes(":")) return false;
         const [property] = rule.split(":");
@@ -344,20 +345,25 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
     if (allowed.length === 0) {
       delete attributes.style;
     } else {
-      attributes.style = allowed
-        .map((rule) => rule.replace(/;+$/, ""))
-        .join("; ");
+      const normalized = allowed
+        .map((rule) => rule.replace(/;+$/, "").trim())
+        .filter((rule) => rule.length > 0);
+      attributes.style = normalized.join("; ");
     }
   }
 
   return undefined; // fall back to default rendering
 }
 
-<UmbracoRichText
-  data={data.richText}
-  renderNode={renderNode}
-  stripStyles={false} // keep styles, but filter them yourself
-/>;
+function RichText({ data }) {
+  return (
+    <UmbracoRichText
+      data={data.richText}
+      renderNode={renderNode}
+      stripStyles={false} // keep styles, but filter them yourself
+    />
+  );
+}
 ```
 
 <!-- Badges -->
