@@ -11,7 +11,21 @@ and renders it with React.
 > You need to enable the `RichTextOutputAsJson` option in the Content Delivery
 > API. See
 > [Content Delivery API configuration](https://docs.umbraco.com/umbraco-cms/reference/content-delivery-api#additional-configuration)
-> for details.
+> for details. In `appsettings.json`, set:
+>
+> ```json
+> {
+>   "Umbraco": {
+>     "CMS": {
+>       "Content": {
+>         "DeliveryApi": {
+>           "RichTextOutputAsJson": true
+>         }
+>       }
+>     }
+>   }
+> }
+> ```
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/charlie-tango/umbraco-rich-text/tree/main?file=examples/UmbracoRichText/src/RichText.tsx)
 
@@ -52,7 +66,9 @@ npm install @charlietango/umbraco-rich-text
 
 When passing the `renderBlock` and `renderNode` props, consider making them
 static functions (move them outside the consuming component) to avoid
-unnecessary re-renders.
+unnecessary re-renders. If they need props from the parent component, wrap them
+in `useCallback` (or keep them outside the component and pass the values in
+closure arguments) so they stay referentially stable.
 
 ```tsx
 import {
@@ -250,6 +266,106 @@ function RichText({ data }) {
       renderNode={(node) => {
         return renderNode(node, { sizes: "720vw" });
       }}
+    />
+  );
+}
+```
+
+### Prevent unnecessary re-renders
+
+Keep rich text rendering server-side when possible (for example, in Next.js
+server components). If you render on the client, memoize `renderNode` and
+`renderBlock` with `useCallback`, and avoid recreating large inline objects like
+`htmlAttributes` on every render to prevent unnecessary React work.
+
+```tsx
+import { useCallback, useMemo } from "react";
+import {
+  UmbracoRichText,
+  RenderNodeContext,
+} from "@charlietango/umbraco-rich-text";
+
+function RichText({ data }) {
+  const renderNode = useCallback(
+    ({ tag, children, attributes }: RenderNodeContext) => {
+      if (tag === "strong") return <strong {...attributes}>{children}</strong>;
+      return undefined;
+    },
+    [], // no external deps; relies only on provided RenderNodeContext
+  );
+
+  const htmlAttributes = useMemo(
+    () => ({
+      p: { className: "leading-7" },
+    }),
+    [],
+  );
+
+  return (
+    <UmbracoRichText
+      data={data.richText}
+      renderNode={renderNode}
+      htmlAttributes={htmlAttributes}
+    />
+  );
+}
+```
+
+### Handling referenced content with extra API calls
+
+If rich text contains IDs or links to other nodes, resolve the data **before**
+rendering:
+
+- Fetch referenced content alongside the main entry (e.g., in a server component
+  or API route) and pass the hydrated data into `renderNode`/`renderBlock`.
+- Cache/batch these fetches to avoid duplicate requests; prefer edge/server
+  caching or a data loader over fetching inside render functions.
+- For client-only scenarios, use React Suspense or a fallback UI while fetching
+  referenced data, and keep the render functions themselves synchronous.
+
+### Selectively keep inline styles
+
+`stripStyles` works at the tag level. To keep only specific CSS properties, use
+`renderNode` to filter the `style` attribute:
+
+```tsx
+import { createElement } from "react";
+
+const ALLOWED_STYLES = ["font-weight", "font-style"];
+
+function filterAllowedStyles(style: string) {
+  const allowedRules: string[] = [];
+  for (const rule of style.split(";")) {
+    const [property, ...rest] = rule.split(":");
+    const propName = property?.trim();
+    const value = rest.join(":").trim();
+    if (!propName || !value) continue;
+    if (!ALLOWED_STYLES.includes(propName)) continue;
+    allowedRules.push(`${propName}: ${value}`);
+  }
+
+  return allowedRules.length > 0 ? allowedRules.join("; ") : undefined;
+}
+
+function renderNode({ tag, attributes, children }: RenderNodeContext) {
+  if (typeof attributes.style === "string") {
+    const filtered = filterAllowedStyles(attributes.style);
+    const nextAttributes = { ...attributes };
+    if (filtered) nextAttributes.style = filtered;
+    else delete nextAttributes.style;
+
+    return createElement(tag, nextAttributes, children);
+  }
+
+  return undefined; // fall back to default rendering
+}
+
+function RichText({ data }) {
+  return (
+    <UmbracoRichText
+      data={data.richText}
+      renderNode={renderNode}
+      stripStyles={false} // keep styles, but filter them yourself
     />
   );
 }
