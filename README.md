@@ -344,7 +344,9 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
     if (allowed.length === 0) {
       delete attributes.style;
     } else {
-      attributes.style = `${allowed.join("; ")};`;
+      attributes.style = allowed
+        .map((rule) => rule.replace(/;+$/, ""))
+        .join("; ");
     }
   }
 
