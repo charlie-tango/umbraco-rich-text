@@ -335,17 +335,18 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
   if (typeof attributes.style === "string") {
     const normalized = attributes.style
       .split(";")
-      .map((rule) => rule.replace(/;+$/, "").trim())
+      .map((rule) => rule.trim())
       .filter((rule) => {
         const [property, ...rest] = rule.split(":");
         const propName = property?.trim();
-        if (!propName || rest.length === 0) return false;
+        const value = rest.join(":").trim();
+        if (!propName || !value) return false;
         return ALLOWED_STYLES.includes(propName);
       });
     if (normalized.length === 0) {
       delete attributes.style;
     } else {
-      attributes.style = normalized.join("; ");
+      attributes.style = `${normalized.join("; ")};`;
     }
   }
 
