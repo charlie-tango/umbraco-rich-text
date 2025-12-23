@@ -333,22 +333,18 @@ const ALLOWED_STYLES = ["font-weight", "font-style"];
 
 function renderNode({ tag, attributes, children }: RenderNodeContext) {
   if (typeof attributes.style === "string") {
-    const allowed = attributes.style
+    const normalized = attributes.style
       .split(";")
-      .map((rule) => rule.trim())
-      .filter((rule) => rule.length > 0)
+      .map((rule) => rule.replace(/;+$/, "").trim())
       .filter((rule) => {
-        if (!rule.includes(":")) return false;
-        const property = rule.split(":")[0]?.trim();
-        if (!property) return false;
-        return ALLOWED_STYLES.includes(property);
+        const [property, ...rest] = rule.split(":");
+        const propName = property?.trim();
+        if (!propName || rest.length === 0) return false;
+        return ALLOWED_STYLES.includes(propName);
       });
-    if (allowed.length === 0) {
+    if (normalized.length === 0) {
       delete attributes.style;
     } else {
-      const normalized = allowed
-        .map((rule) => rule.replace(/;+$/, "").trim())
-        .filter((rule) => rule.length > 0);
       attributes.style = normalized.join("; ");
     }
   }
