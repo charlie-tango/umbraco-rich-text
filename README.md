@@ -331,23 +331,29 @@ rendering:
 ```tsx
 const ALLOWED_STYLES = ["font-weight", "font-style"];
 
+function filterAllowedStyles(style: string) {
+  const allowedRules = style
+    .split(";")
+    .map((rule) => rule.trim())
+    .filter(Boolean)
+    .map((rule) => {
+      const [property, ...rest] = rule.split(":");
+      const propName = property?.trim();
+      const value = rest.join(":").trim();
+      if (!propName || !value) return null;
+      if (!ALLOWED_STYLES.includes(propName)) return null;
+      return `${propName}: ${value}`;
+    })
+    .filter(Boolean) as string[];
+
+  return allowedRules.length > 0 ? allowedRules.join("; ") : undefined;
+}
+
 function renderNode({ tag, attributes, children }: RenderNodeContext) {
   if (typeof attributes.style === "string") {
-    const normalized = attributes.style
-      .split(";")
-      .map((rule) => rule.trim())
-      .filter((rule) => {
-        const [property, ...rest] = rule.split(":");
-        const propName = property?.trim();
-        const value = rest.join(":").trim();
-        if (!propName || !value) return false;
-        return ALLOWED_STYLES.includes(propName);
-      });
-    if (normalized.length === 0) {
-      delete attributes.style;
-    } else {
-      attributes.style = `${normalized.join("; ")};`;
-    }
+    const filtered = filterAllowedStyles(attributes.style);
+    if (filtered) attributes.style = filtered;
+    else delete attributes.style;
   }
 
   return undefined; // fall back to default rendering
