@@ -339,8 +339,9 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
       .filter((rule) => rule.length > 0)
       .filter((rule) => {
         if (!rule.includes(":")) return false;
-        const [property] = rule.split(":");
-        return ALLOWED_STYLES.includes(property?.trim() ?? "");
+        const property = rule.split(":")[0]?.trim();
+        if (!property) return false;
+        return ALLOWED_STYLES.includes(property);
       });
     if (allowed.length === 0) {
       delete attributes.style;
