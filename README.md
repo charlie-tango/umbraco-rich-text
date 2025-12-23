@@ -76,7 +76,6 @@ import {
   RenderBlockContext,
   RenderNodeContext,
 } from "@charlietango/umbraco-rich-text";
-import { useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -107,14 +106,11 @@ function renderBlock({ content }: RenderBlockContext) {
 }
 
 function RichText({ data }) {
-  const stableRenderNode = useCallback(renderNode, []);
-  const stableRenderBlock = useCallback(renderBlock, []);
-
   return (
     <UmbracoRichText
       data={data.richText}
-      renderNode={stableRenderNode}
-      renderBlock={stableRenderBlock}
+      renderNode={renderNode}
+      renderBlock={renderBlock}
       htmlAttributes={{ p: { className: "mb-4" } }}
       stripStyles={{
         // Strip styles from all tags except the following:
@@ -341,13 +337,14 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
       .split(";")
       .map((rule) => rule.trim())
       .filter((rule) => {
+        if (!rule.includes(":")) return false;
         const [property] = rule.split(":");
         return ALLOWED_STYLES.includes(property?.trim() ?? "");
       });
     if (allowed.length === 0) {
       delete attributes.style;
     } else {
-      attributes.style = allowed.join("; ");
+      attributes.style = `${allowed.join("; ")};`;
     }
   }
 
