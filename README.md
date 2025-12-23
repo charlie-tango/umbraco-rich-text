@@ -289,28 +289,30 @@ import {
   RenderNodeContext,
 } from "@charlietango/umbraco-rich-text";
 
-const renderNode = useCallback(
-  ({ tag, children, attributes }: RenderNodeContext) => {
-    if (tag === "strong") return <strong {...attributes}>{children}</strong>;
-    return undefined;
-  },
-  [],
-);
+function RichText({ data }) {
+  const renderNode = useCallback(
+    ({ tag, children, attributes }: RenderNodeContext) => {
+      if (tag === "strong") return <strong {...attributes}>{children}</strong>;
+      return undefined;
+    },
+    [],
+  );
 
-const htmlAttributes = useMemo(
-  () => ({
-    p: { className: "leading-7" },
-  }),
-  [],
-);
+  const htmlAttributes = useMemo(
+    () => ({
+      p: { className: "leading-7" },
+    }),
+    [],
+  );
 
-return (
-  <UmbracoRichText
-    data={data.richText}
-    renderNode={renderNode}
-    htmlAttributes={htmlAttributes}
-  />
-);
+  return (
+    <UmbracoRichText
+      data={data.richText}
+      renderNode={renderNode}
+      htmlAttributes={htmlAttributes}
+    />
+  );
+}
 ```
 
 ### Handling referenced content with extra API calls
@@ -338,7 +340,10 @@ function renderNode({ tag, attributes, children }: RenderNodeContext) {
     const allowed = attributes.style
       .split(";")
       .map((rule) => rule.trim())
-      .filter((rule) => ALLOWED_STYLES.includes(rule.split(":")[0]?.trim()));
+      .filter((rule) => {
+        const [property] = rule.split(":");
+        return ALLOWED_STYLES.includes(property?.trim() ?? "");
+      });
     if (allowed.length === 0) {
       delete attributes.style;
     } else {
