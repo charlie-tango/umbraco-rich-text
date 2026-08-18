@@ -168,6 +168,13 @@ declare module "@charlietango/umbraco-rich-text" {
 }
 ```
 
+### Server Components / SSR
+
+`UmbracoRichText` uses no hooks, state, context, or browser-only APIs, so it
+renders safely in React Server Components without a `"use client"` directive, as
+well as in traditional server-side rendering. This property is covered by tests,
+so introducing a hook into the component would be a regression.
+
 ## `richTextToPlainText`
 
 A utility function to convert an Umbraco RichText element to plain text. This
