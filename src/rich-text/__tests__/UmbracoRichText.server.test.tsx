@@ -71,11 +71,10 @@ test("renders anchor href and htmlAttributes via renderToString", () => {
  * React Server Components."` react-dom does not itself implement an RSC
  * renderer — that requires `react-server-dom-webpack` (or an equivalent
  * bundler-specific package), which is out of scope for this spike (no new
- * dependencies). This was confirmed by running:
- *   node --conditions react-server -e
- *     "import('react-dom/server.edge').then(m => console.log(m))"
- * which throws that exact error at module-load time, before any component
- * code runs.
+ * dependencies). This was confirmed by running a script containing
+ * `import pkg from "react-dom/server.edge"` via
+ * `node --conditions react-server <script>`, which throws that exact error
+ * at module-load time, before any component code runs.
  *
  * As authorized by the plan's Step 2 fallback, we instead assert statically
  * that the component source contains no hook calls — the concrete property
