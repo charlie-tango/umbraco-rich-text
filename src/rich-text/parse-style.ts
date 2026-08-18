@@ -32,14 +32,16 @@ export const parseStyle = (style: string) => {
 
   const styleElements = normalizedStyle.split(";");
   for (const el of styleElements) {
-    let [property, value] = el.split(":");
-    if (!property || value === undefined) continue;
-    property = property.trim();
+    const separatorIndex = el.indexOf(":");
+    if (separatorIndex === -1) continue;
+    let property = el.slice(0, separatorIndex).trim();
+    const value = el.slice(separatorIndex + 1).trim();
+    if (!property) continue;
     if (!property.startsWith("--")) {
       // Convert kebab-case to camelCase for CSS properties
       property = toCamelCase(property);
     }
-    styleProps[property] = value.trim();
+    styleProps[property] = value;
   }
 
   const parsed = styleProps as CSSProperties;
