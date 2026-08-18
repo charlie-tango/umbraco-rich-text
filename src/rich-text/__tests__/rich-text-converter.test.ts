@@ -54,3 +54,32 @@ test("should ignore tags", () => {
     `"What follows from here is just a bunch of absolute nonsense I've written to dogfood the plugin itself. It includes every sensible typographic element I could think of, like, unordered lists, ordered lists, code blocks, block quotes,. It's important to cover all of these use cases for a..."`,
   );
 });
+
+test("should return an empty string for undefined input", () => {
+  expect(richTextToPlainText(undefined)).toBe("");
+});
+
+test("should return an empty string for null input", () => {
+  expect(richTextToPlainText(null)).toBe("");
+});
+
+test("should truncate a single long word with no whitespace", () => {
+  const data: RichTextElementModel = {
+    tag: "#root",
+    elements: [{ tag: "#text", text: "Supercalifragilistic" }],
+  } as RichTextElementModel;
+  expect(richTextToPlainText(data, { maxLength: 10 })).toBe("Supercalif...");
+});
+
+test("should return an empty string when firstParagraph is requested but no paragraph exists", () => {
+  const data: RichTextElementModel = {
+    tag: "#root",
+    elements: [
+      {
+        tag: "h1",
+        elements: [{ tag: "#text", text: "Heading only" }],
+      },
+    ],
+  } as RichTextElementModel;
+  expect(richTextToPlainText(data, { firstParagraph: true })).toBe("");
+});
