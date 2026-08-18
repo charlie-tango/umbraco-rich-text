@@ -104,6 +104,48 @@ it("should convert media-related attributes", () => {
   });
 });
 
+it("should convert label/table/form attributes to React camelCase equivalents", () => {
+  const htmlAttributes = {
+    for: "field-1",
+    cellpadding: "0",
+    cellspacing: "0",
+    novalidate: true,
+    inputmode: "numeric",
+  };
+
+  const reactAttributes = mapHtmlAttributesToReact(htmlAttributes);
+
+  expect(reactAttributes).toEqual({
+    htmlFor: "field-1",
+    cellPadding: "0",
+    cellSpacing: "0",
+    noValidate: true,
+    inputMode: "numeric",
+  });
+
+  expect(reactAttributes).not.toHaveProperty("for");
+});
+
+it("should convert media and microdata attributes to React camelCase equivalents", () => {
+  const htmlAttributes = {
+    playsinline: true,
+    autoplay: true,
+    controlslist: "nodownload",
+    usemap: "#map",
+    itemprop: "name",
+  };
+
+  const reactAttributes = mapHtmlAttributesToReact(htmlAttributes);
+
+  expect(reactAttributes).toEqual({
+    playsInline: true,
+    autoPlay: true,
+    controlsList: "nodownload",
+    useMap: "#map",
+    itemProp: "name",
+  });
+});
+
 it("should handle attributes with mixed casing", () => {
   // Ensure we handle cases where attributes are not in standard lowercase
   const mixedCaseAttributes = {

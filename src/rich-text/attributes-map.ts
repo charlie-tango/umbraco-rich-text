@@ -4,10 +4,18 @@ const attributesMap: Record<string, string> = {
   // Table-related attributes
   colspan: "colSpan",
   rowspan: "rowSpan",
+  cellpadding: "cellPadding",
+  cellspacing: "cellSpacing",
 
   // Common HTML attributes
   class: "className", // React uses className instead of class
   tabindex: "tabIndex",
+  for: "htmlFor", // The real HTML attribute on <label>
+  inputmode: "inputMode",
+  enterkeyhint: "enterKeyHint",
+  autocapitalize: "autoCapitalize",
+  popovertarget: "popoverTarget",
+  popovertargetaction: "popoverTargetAction",
 
   // Form-related attributes
   accesskey: "accessKey",
@@ -26,6 +34,8 @@ const attributesMap: Record<string, string> = {
   maxlength: "maxLength",
   minlength: "minLength",
   readonly: "readOnly",
+  novalidate: "noValidate",
+  dirname: "dirName",
 
   // Media-related attributes
   allowfullscreen: "allowFullScreen",
@@ -37,6 +47,16 @@ const attributesMap: Record<string, string> = {
   referrerpolicy: "referrerPolicy",
   srcdoc: "srcDoc",
   srcset: "srcSet",
+  autoplay: "autoPlay",
+  playsinline: "playsInline",
+  controlslist: "controlsList",
+  disablepictureinpicture: "disablePictureInPicture",
+  disableremoteplayback: "disableRemotePlayback",
+  usemap: "useMap",
+  ismap: "isMap",
+  fetchpriority: "fetchPriority",
+  imagesizes: "imageSizes",
+  imagesrcset: "imageSrcSet",
 
   // SVG-related attributes
   gradientunits: "gradientUnits",
@@ -44,10 +64,18 @@ const attributesMap: Record<string, string> = {
   preserveaspectratio: "preserveAspectRatio",
   viewbox: "viewBox",
 
+  // Microdata attributes
+  itemid: "itemID",
+  itemprop: "itemProp",
+  itemref: "itemRef",
+  itemscope: "itemScope",
+  itemtype: "itemType",
+
   // Less common but potentially used in rich text
   acceptcharset: "acceptCharset",
   datetime: "dateTime",
   spellcheck: "spellCheck",
+  nomodule: "noModule",
 };
 
 /**
