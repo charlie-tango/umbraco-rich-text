@@ -879,3 +879,166 @@ it("should combine tags and except properties correctly", () => {
   expect(span).toHaveAttribute("style", "font-weight: bold;");
   expect(h1).toHaveAttribute("style", "font-size: 24px;");
 });
+
+it("should handle an anchor-only link with no href", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              anchor: "#main",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "#main");
+});
+
+it("should handle a query-only link with no href", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              anchor: "?foo=bar",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "?foo=bar");
+});
+
+it("should leave a protocol-relative href untouched without an anchor", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              href: "//example.com/x",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "//example.com/x");
+});
+
+it("should preserve a protocol-relative href when merging an anchor", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              href: "//example.com/x",
+              anchor: "#a",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "//example.com/x#a");
+});
+
+it("should not normalize an href without an anchor", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              href: "https://example.com",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "https://example.com");
+});
+
+it("should leave a relative href untouched without an anchor", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: {
+              href: "path/sub",
+            },
+            elements: [
+              {
+                text: "Link",
+                tag: "#text",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  const link = screen.getByRole("link").element();
+  expect(link).toHaveAttribute("href", "path/sub");
+});

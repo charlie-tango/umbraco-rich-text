@@ -215,25 +215,39 @@ function RichTextElement({
           : undefined;
       attributes.anchor = undefined;
 
-      const url = parseUrl(href);
-      // If the user has added an anchor or query parameter to the href, we need to handle it
-      if (url) {
-        if (anchorOrQuery?.startsWith("?")) {
-          // Add the custom query parameter to the href.
-          const queryParams = new URLSearchParams(anchorOrQuery);
-          // Add all query parameters to the URL. This will overwrite any existing query parameters with the same key.
-          queryParams.forEach((val, key) => {
-            url.searchParams.set(key, val);
-          });
-        } else if (anchorOrQuery) {
-          // Append the anchor (hash) to the href
-          url.hash = anchorOrQuery;
-        }
-
-        attributes.href = url.toString().replace(/^http:\/\/localhost\//, "/");
+      if (!anchorOrQuery) {
+        // No anchor or query to merge, so leave the href untouched.
+        attributes.href = href;
+      } else if (!href) {
+        // No href to merge into, so use the anchor or query directly.
+        attributes.href = anchorOrQuery;
       } else {
-        // Fallback to merging the href with the anchor or query parameter
-        attributes.href = href + (anchorOrQuery || "");
+        // Preserve protocol-relative hrefs (e.g. "//example.com/x") by parsing
+        // them with an explicit scheme, then stripping it back off afterwards.
+        const isProtocolRelative = href.startsWith("//");
+        const url = parseUrl(isProtocolRelative ? `http:${href}` : href);
+        // If the user has added an anchor or query parameter to the href, we need to handle it
+        if (url) {
+          if (anchorOrQuery?.startsWith("?")) {
+            // Add the custom query parameter to the href.
+            const queryParams = new URLSearchParams(anchorOrQuery);
+            // Add all query parameters to the URL. This will overwrite any existing query parameters with the same key.
+            queryParams.forEach((val, key) => {
+              url.searchParams.set(key, val);
+            });
+          } else if (anchorOrQuery) {
+            // Append the anchor (hash) to the href
+            url.hash = anchorOrQuery;
+          }
+
+          const serialized = url.toString();
+          attributes.href = isProtocolRelative
+            ? serialized.replace(/^http:/, "")
+            : serialized.replace(/^http:\/\/localhost\//, "/");
+        } else {
+          // Fallback to merging the href with the anchor or query parameter
+          attributes.href = href + (anchorOrQuery || "");
+        }
       }
     }
 
