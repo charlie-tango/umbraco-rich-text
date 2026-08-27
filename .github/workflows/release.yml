@@ -2,6 +2,7 @@ name: Release
 
 permissions:
   contents: write
+  id-token: write # required for npm trusted publishing / provenance
 
 on:
   push:
@@ -26,3 +27,21 @@ jobs:
       - run: npx changelogithub
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm install --global corepack@latest
+      - run: corepack enable
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Update npm for trusted publishing
+        run: npm install --global npm@latest
+      - name: Install dependencies
+        run: pnpm install
+      - name: Publish
+        run: npm publish
