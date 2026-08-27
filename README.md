@@ -181,7 +181,8 @@ can be useful for generating meta descriptions or other text-based properties.
     paragraph with text content will be returned.
   - `maxLength` (`number`, _optional_): The maximum length of the returned text.
     If the text exceeds this length, it will be truncated to the nearest word
-    and an ellipsis will be added.
+    and an ellipsis will be added. The returned string may be up to 3 characters
+    longer than `maxLength` because the ellipsis is appended after truncation.
   - `ignoreTags` (`Array<string>`, _optional_): An array of tags to be ignored
     during the conversion.
 

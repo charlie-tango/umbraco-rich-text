@@ -6,8 +6,6 @@ import {
   type RichTextElementModel,
 } from "./RichTextTypes";
 
-const arrayContentLength = (arr: string[]) => arr.join("").length;
-
 /**
  * Iterate over the rich text and find all text elements.
  */
@@ -15,6 +13,7 @@ function iterateRichText(
   data: RichTextElementModel,
   acc: string[],
   options: Options,
+  state: { length: number },
 ) {
   // Iterate over the elements in the rich text, and find all `#text` elements
   if (isTextElement(data)) {
@@ -23,8 +22,11 @@ function iterateRichText(
     // If the text is the first element, or the first character is a special character, don't add a space
     if (acc.length === 0 || decodedText.charAt(0).match(/[.,?!:;]/)) {
       acc.push(decodedText);
+      state.length += decodedText.length;
     } else {
-      acc.push(` ${decodedText}`);
+      const part = ` ${decodedText}`;
+      acc.push(part);
+      state.length += part.length;
     }
     return acc;
   }
@@ -38,8 +40,8 @@ function iterateRichText(
 
   if (hasElements(data)) {
     for (let i = 0; i < data.elements.length; i++) {
-      iterateRichText(data.elements[i], acc, options);
-      if (options.maxLength && arrayContentLength(acc) >= options.maxLength) {
+      iterateRichText(data.elements[i], acc, options, state);
+      if (options.maxLength && state.length >= options.maxLength) {
         return acc;
       }
     }
@@ -86,15 +88,18 @@ type Options = {
  * When joining the text elements, it will trim whitespace, and add space between elements - Unless the first character is a special character, like a period or comma.
  */
 export function richTextToPlainText(
-  data: RichTextElementModel,
+  data: RichTextElementModel | undefined | null,
   options: Options = {},
 ) {
+  if (!data) {
+    return "";
+  }
   // Iterate over the elements in the rich text, and find all `#text` elements
   const content = options.firstParagraph ? findElement(data, "p") : data;
   if (!content) {
     return "";
   }
-  const output = iterateRichText(content, [], options).join("");
+  const output = iterateRichText(content, [], options, { length: 0 }).join("");
   if (options.maxLength && output.length > options.maxLength) {
     // If the output is longer than the maxLength, truncate it to nearest word, and add ellipsis
     return `${output.slice(0, options.maxLength).replace(/[.,]?\s+\S*$/, "")}...`;
