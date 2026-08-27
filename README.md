@@ -49,6 +49,23 @@ npm install @charlietango/umbraco-rich-text
     - `except`: Array of HTML tags that should keep their styles, even if they
       are in the `tags` array.
   - Default is `false` (all inline styles are preserved).
+- `sanitize`: Opt-in sanitization of CMS-authored content. Both options are
+  independently optional, and omitting `sanitize` (the default) changes nothing.
+  Accepts an object with:
+  - `allowedHrefSchemes`: Allowed URL schemes for `<a href>`, compared
+    case-insensitively without the trailing colon (e.g.
+    `["http", "https", "mailto"]`). Hrefs with no scheme (relative paths,
+    `#hash`, `?query`, protocol-relative `//host`) always pass. When a scheme is
+    present and not in the list, the `href` attribute is removed; the anchor
+    element and its other attributes still render.
+  - `stripAttributes`: Strip attributes by name, after HTML-to-React mapping.
+    Accepts:
+    - `true`: Uses the default unsafe list: event handlers (`/^on[a-z]/i`),
+      `formaction`, and `dangerouslySetInnerHTML`.
+    - An array of `string | RegExp`: Replaces the default list entirely. Strings
+      match case-insensitively, and `RegExp`s are tested against the mapped
+      attribute name.
+  - Default is `undefined` (nothing is sanitized).
 
 When passing the `renderBlock` and `renderNode` props, consider making them
 static functions (move them outside the consuming component) to avoid

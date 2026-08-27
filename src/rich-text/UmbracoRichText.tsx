@@ -102,6 +102,61 @@ interface RichTextProps {
         tags?: Array<keyof React.JSX.IntrinsicElements>;
         except?: Array<keyof React.JSX.IntrinsicElements>;
       };
+  /**
+   * Opt-in sanitization of CMS-authored content. Both options are
+   * independently optional; omitting `sanitize` (the default) changes
+   * nothing.
+   *
+   * @default undefined
+   */
+  sanitize?: {
+    /**
+     * Allowed URL schemes for `<a href>`, compared case-insensitively
+     * without the trailing colon (e.g. `["http", "https", "mailto"]`).
+     * Hrefs with no scheme (relative paths, `#hash`, `?query`,
+     * protocol-relative `//host`) always pass. When a scheme is present and
+     * not in the list, the `href` attribute is removed; the anchor element
+     * and its other attributes still render.
+     */
+    allowedHrefSchemes?: string[];
+    /**
+     * Strip attributes by name, after HTML-to-React mapping. `true` uses
+     * the default unsafe list: event handlers (`/^on[a-z]/i`),
+     * `formaction`, and `dangerouslySetInnerHTML`. An array replaces the
+     * default list entirely: strings match case-insensitively, RegExps are
+     * tested against the mapped attribute name.
+     */
+    stripAttributes?: boolean | Array<string | RegExp>;
+  };
+}
+
+const defaultStripAttributes: Array<string | RegExp> = [
+  /^on[a-z]/i,
+  "formaction",
+  "dangerouslySetInnerHTML",
+];
+
+function shouldStripAttribute(
+  key: string,
+  list: Array<string | RegExp>,
+): boolean {
+  return list.some((entry) =>
+    typeof entry === "string"
+      ? entry.toLowerCase() === key.toLowerCase()
+      : entry.test(key),
+  );
+}
+
+const hrefSchemeRegex = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+
+function isAllowedHrefScheme(href: string, allowed: string[]): boolean {
+  const match = href.match(hrefSchemeRegex);
+  if (!match) {
+    // No scheme: relative path, #hash, ?query, or protocol-relative //host
+    return true;
+  }
+  const scheme = match[0].slice(0, -1).toLowerCase();
+  return allowed.some((entry) => entry.toLowerCase() === scheme);
 }
 
 function parseUrl(href: string) {
@@ -129,6 +184,7 @@ function RichTextElement({
   renderNode,
   htmlAttributes = {},
   stripStyles = false,
+  sanitize,
   metaGetter,
   provideMeta,
 }: {
@@ -139,7 +195,7 @@ function RichTextElement({
   provideMeta: boolean;
 } & Pick<
   RichTextProps,
-  "renderBlock" | "renderNode" | "htmlAttributes" | "stripStyles"
+  "renderBlock" | "renderNode" | "htmlAttributes" | "stripStyles" | "sanitize"
 >) {
   if (!element || element.tag === "#comment" || element.tag === "#root")
     return null;
@@ -184,6 +240,7 @@ function RichTextElement({
         renderBlock={renderBlock}
         renderNode={renderNode}
         stripStyles={stripStyles}
+        sanitize={sanitize}
         metaGetter={
           provideMeta
             ? createMetaGetter(() => ({
@@ -205,6 +262,18 @@ function RichTextElement({
       element.attributes,
     );
     const defaultAttributes = htmlAttributes[element.tag];
+
+    if (sanitize?.stripAttributes) {
+      const list =
+        sanitize.stripAttributes === true
+          ? defaultStripAttributes
+          : sanitize.stripAttributes;
+      for (const key of Object.keys(attributes)) {
+        if (shouldStripAttribute(key, list)) {
+          delete attributes[key];
+        }
+      }
+    }
 
     if (element.tag === "a") {
       const hrefFromAttributes = attributes?.href as string | undefined;
@@ -248,6 +317,14 @@ function RichTextElement({
           // Fallback to merging the href with the anchor or query parameter
           attributes.href = href + (anchorOrQuery || "");
         }
+      }
+
+      if (
+        sanitize?.allowedHrefSchemes &&
+        typeof attributes.href === "string" &&
+        !isAllowedHrefScheme(attributes.href, sanitize.allowedHrefSchemes)
+      ) {
+        attributes.href = undefined;
       }
     }
 
@@ -350,6 +427,7 @@ export function UmbracoRichText(props: RichTextProps) {
             renderNode={props.renderNode}
             htmlAttributes={props.htmlAttributes}
             stripStyles={props.stripStyles}
+            sanitize={props.sanitize}
             metaGetter={
               provideMeta
                 ? createMetaGetter(() => ({

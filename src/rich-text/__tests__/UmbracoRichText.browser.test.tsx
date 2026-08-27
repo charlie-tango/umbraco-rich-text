@@ -1042,3 +1042,268 @@ it("should leave a relative href untouched without an anchor", () => {
   const link = screen.getByRole("link").element();
   expect(link).toHaveAttribute("href", "path/sub");
 });
+
+it("should leave javascript: hrefs untouched when sanitize is not set (default-off pin)", () => {
+  // React itself intercepts javascript: URLs at the DOM level (logging a dev
+  // warning and swapping in a throwing stub), which would mask what our own
+  // code does. Capture the attributes object via renderNode instead, so the
+  // assertion reflects our logic rather than React's unrelated DOM behavior.
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const capturedAttributes: Array<Record<string, unknown>> = [];
+  render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: { href: "javascript:alert(1)" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      renderNode={(node) => {
+        capturedAttributes.push(node.attributes as Record<string, unknown>);
+        return undefined;
+      }}
+    />,
+  );
+  expect(capturedAttributes[0]).toHaveProperty("href", "javascript:alert(1)");
+});
+
+it("should strip disallowed href schemes when there is no anchor/query to merge", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: { href: "javascript:alert(1)" },
+            elements: [{ tag: "#text", text: "javascript" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "data:text/html,x" },
+            elements: [{ tag: "#text", text: "data" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "https://example.com" },
+            elements: [{ tag: "#text", text: "https" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "/path" },
+            elements: [{ tag: "#text", text: "relative" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "#main" },
+            elements: [{ tag: "#text", text: "hash" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "?q=1" },
+            elements: [{ tag: "#text", text: "query" }],
+          },
+          {
+            tag: "a",
+            attributes: { href: "//example.com/x" },
+            elements: [{ tag: "#text", text: "protocol-relative" }],
+          },
+        ],
+      }}
+      sanitize={{ allowedHrefSchemes: ["http", "https"] }}
+    />,
+  );
+
+  const links = screen.container.querySelectorAll("a");
+  expect(links[0]).not.toHaveAttribute("href");
+  expect(links[1]).not.toHaveAttribute("href");
+  expect(links[2]).toHaveAttribute("href", "https://example.com");
+  expect(links[3]).toHaveAttribute("href", "/path");
+  expect(links[4]).toHaveAttribute("href", "#main");
+  expect(links[5]).toHaveAttribute("href", "?q=1");
+  expect(links[6]).toHaveAttribute("href", "//example.com/x");
+});
+
+it("should strip disallowed href schemes after merging an anchor", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: { href: "ftp://example.com/file", anchor: "#a" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      sanitize={{ allowedHrefSchemes: ["http", "https"] }}
+    />,
+  );
+  // The <a> element has no implicit "link" role once its href is removed,
+  // so query it directly instead of via getByRole.
+  const link = screen.container.querySelector("a");
+  expect(link).not.toHaveAttribute("href");
+});
+
+it("should compare href schemes case-insensitively", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "a",
+            attributes: { href: "JAVASCRIPT:alert(1)" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      sanitize={{ allowedHrefSchemes: ["http", "https"] }}
+    />,
+  );
+  const link = screen.container.querySelector("a");
+  expect(link).not.toHaveAttribute("href");
+});
+
+it("should strip the default unsafe attributes when stripAttributes is true", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "button",
+            attributes: {
+              onclick: "x()",
+              formaction: "/evil",
+              "data-keep": "1",
+              class: "c",
+            },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      sanitize={{ stripAttributes: true }}
+    />,
+  );
+  const button = screen.container.querySelector("button") as HTMLElement;
+  expect(button).not.toHaveAttribute("onclick");
+  expect(button).not.toHaveAttribute("formaction");
+  expect(button).toHaveAttribute("data-keep", "1");
+  expect(button).toHaveClass("c");
+});
+
+it("should replace (not merge) the default stripAttributes list when a custom list is given", () => {
+  // React itself drops a string-valued "onclick" attribute at the DOM level
+  // (it looks like the onClick event handler prop, which requires a
+  // function), which would mask what our own code does. Assert the DOM
+  // effects that are reliable (data-track removed, data-keep kept) and use
+  // a renderNode capture to confirm "onclick" survives our own stripping
+  // logic, since the custom list replaces rather than merges with the
+  // default unsafe list.
+  const capturedAttributes: Array<Record<string, unknown>> = [];
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: {
+              onclick: "x()",
+              "data-track": "1",
+              "data-keep": "1",
+            },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      sanitize={{ stripAttributes: ["data-track"] }}
+      renderNode={(node) => {
+        capturedAttributes.push(node.attributes as Record<string, unknown>);
+        return undefined;
+      }}
+    />,
+  );
+  const div = screen.container.querySelector("div") as HTMLElement;
+  expect(div).not.toHaveAttribute("data-track");
+  expect(div).toHaveAttribute("data-keep", "1");
+  expect(capturedAttributes[0]).toHaveProperty("onclick", "x()");
+});
+
+it("should not expose stripped attributes to renderNode", () => {
+  const capturedAttributes: Array<Record<string, unknown>> = [];
+  render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { onclick: "x()", "data-keep": "1" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      sanitize={{ stripAttributes: true }}
+      renderNode={(node) => {
+        capturedAttributes.push(node.attributes as Record<string, unknown>);
+        return undefined;
+      }}
+    />,
+  );
+  expect(capturedAttributes).toHaveLength(1);
+  expect(capturedAttributes[0]).not.toHaveProperty("onclick");
+  expect(capturedAttributes[0]).not.toHaveProperty("onClick");
+  expect(capturedAttributes[0]).toHaveProperty("data-keep", "1");
+});
+
+it("should preserve htmlAttributes defaults when stripAttributes is enabled", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "p",
+            attributes: { onclick: "x()" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      htmlAttributes={{ p: { className: "mb-4" } }}
+      sanitize={{ stripAttributes: true }}
+    />,
+  );
+  const paragraph = screen.getByRole("paragraph").element();
+  expect(paragraph).toHaveClass("mb-4");
+  expect(paragraph).not.toHaveAttribute("onclick");
+});
+
+it("should combine stripAttributes with stripStyles without interference", () => {
+  const screen = render(
+    <UmbracoRichText
+      data={{
+        tag: "#root",
+        elements: [
+          {
+            tag: "div",
+            attributes: { style: "color: red;", onclick: "x()" },
+            elements: [{ tag: "#text", text: "text" }],
+          },
+        ],
+      }}
+      stripStyles={true}
+      sanitize={{ stripAttributes: true }}
+    />,
+  );
+  const div = screen.container.querySelector("div") as HTMLElement;
+  expect(div).not.toHaveAttribute("style");
+  expect(div).not.toHaveAttribute("onclick");
+});
