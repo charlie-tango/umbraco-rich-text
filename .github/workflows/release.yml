@@ -1,38 +1,44 @@
 name: Release
 
-permissions:
-  contents: write
-  id-token: write # required for npm trusted publishing / provenance
-
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version bump'
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+      tag:
+        description: 'npm dist-tag'
+        type: string
+        default: latest
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    steps:
-      - run: npm install --global corepack@latest
-      - run: corepack enable
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: '0' # Avoid shallow clone
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: 'pnpm'
+    permissions:
+      contents: write # Push the version commit and tag, and create the release
+      id-token: write # Mint the OIDC token npm trusted publishing requires
 
-      - run: npx changelogithub
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  publish:
-    runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # changelogithub needs the full tag history
       - run: npm install --global corepack@latest
       - run: corepack enable
-      - uses: actions/checkout@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,6 +48,29 @@ jobs:
       - name: Update npm for trusted publishing
         run: npm install --global npm@latest
       - name: Install dependencies
-        run: pnpm install
-      - name: Publish
-        run: npm publish
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        # Build before bumping, so a broken build fails the run while the
+        # version commit and tag have not been pushed yet.
+        run: pnpm build
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Bump version, commit and tag
+        # bumpp writes the version to package.json, commits it, tags that
+        # commit and pushes both, so the tag can never disagree with the
+        # version being published.
+        run: pnpm exec bumpp ${{ inputs.version }} --yes
+
+      - name: Publish to npm
+        # No NODE_AUTH_TOKEN: npm authenticates through the OIDC token, and
+        # provenance is attested automatically by trusted publishing.
+        run: npm publish --tag ${{ inputs.tag }}
+
+      - name: Create GitHub release
+        run: npx changelogithub ${{ startsWith(inputs.version, 'pre') && '--prerelease' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
