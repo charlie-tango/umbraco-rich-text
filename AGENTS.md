@@ -53,9 +53,15 @@ private Vite demo app in the pnpm workspace, not part of the published package.
 
 ## Releases
 
-Releases are cut locally with `pnpm release` (`bumpp` bumps the version,
-commits, tags, and pushes; `npm publish` then publishes the package). The pushed
-`v*` tag also triggers `.github/workflows/release.yml`, which currently
-generates GitHub release notes via `changelogithub`. Agents must never run
-`pnpm release`, `bumpp`, or `npm publish` — releases are a maintainer-only
-action.
+Releases run entirely on GitHub. Start the "Release" workflow from the Actions
+tab, choose the version bump (`patch`, `minor`, `major`, or a prerelease) and
+the npm dist-tag. The run builds the package, then `bumpp` writes the new
+version to `package.json`, commits it, tags that commit and pushes both, then
+`npm publish` ships it with provenance via trusted publishing and
+`changelogithub` writes the GitHub release notes.
+
+The bump and the publish happen in the same run, so a tag can never disagree
+with the version being published. Do not bump the version, create a `v*` tag, or
+run `npm publish` by hand - a hand-made tag triggers nothing and only leaves the
+repo out of sync with npm. Agents must never start the Release workflow;
+releasing is a maintainer-only action.
